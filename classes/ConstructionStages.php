@@ -105,7 +105,7 @@ class ConstructionStages
      * }
      *
      * @param stdClass $data data to update in JSON format
-     * @param int $id
+     * @param int $id Record ID
      * @return array Array with updated record
      */
     public function update(stdClass $data, int $id) :array
@@ -144,6 +144,31 @@ class ConstructionStages
         $sql = "UPDATE construction_stages SET " . implode(', ', $placeHolders) . " WHERE ID = :id" ;
         $stmt = $this->db->prepare($sql);
         $stmt->execute($validatedData);
+
+        return $this->getSingle($id);
+    }
+
+    /**
+     * Soft delete a record.
+     *
+     * Set status field to DELETED
+     *
+     * @param int $id Record ID
+     * @return array Array with updated record
+     */
+    public function delete(int $id) :array
+    {
+        // check if record exist
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM construction_stages WHERE ID = :id");
+        $stmt->execute(['id' => $id]);
+        $recordFound = ($stmt->fetch(PDO::FETCH_NUM)[0] == 1) ? true: false;
+        if (!$recordFound) {
+            return ['error_message' => 'Record not found'];
+        }
+
+        // set deleted status to record
+        $stmt = $this->db->prepare("UPDATE construction_stages SET status = 'DELETED' WHERE ID = :id");
+        $stmt->execute(['id' => $id]);
 
         return $this->getSingle($id);
     }
